@@ -31,7 +31,9 @@ public:
     vector<Mesh>    meshes;
     string directory;
     bool gammaCorrection;
-
+    float offsetX;
+    float offsetY;
+    float offsetZ;
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, bool gamma = false) : gammaCorrection(gamma)
     {

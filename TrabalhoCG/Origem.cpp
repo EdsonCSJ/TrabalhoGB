@@ -10,6 +10,7 @@
 #include <model.h>
 
 #include <iostream>
+#include<vector>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -29,6 +30,13 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+using namespace std;
+
+vector<Model> models;
+int selectedObj = 0;
+
+
 
 int main()
 {
@@ -81,14 +89,22 @@ int main()
 
     // load models
     // -----------
-    Model ourModel("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/backpack/backpack.obj");
-
-
+    Model ourModel1("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/backpack/backpack.obj");
+    Model ourModel2("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/pikachu/Pikachu.obj");
+    Model ourModel3("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/pikachu/Pikachu.obj");
+    models.push_back(ourModel1);
+    models.push_back(ourModel2);
+    models.push_back(ourModel3);
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     // -----------
+    vector<glm::mat4> objTransformations;
+    glm::mat4 aux = glm::mat4(1.0f);
+    for (int i = 0; i < models.size(); i++) {
+        objTransformations.push_back(aux);
+    }
     while (!glfwWindowShouldClose(window))
     {
         // per-frame time logic
@@ -116,12 +132,20 @@ int main()
         ourShader.setMat4("view", view);
 
         // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
-
+        for (int i = 0; i < models.size(); i++) {
+            if (selectedObj == i) {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(models.at(i).offsetX, models.at(i).offsetY, models.at(i).offsetZ));
+                model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+                objTransformations.at(i) = model;
+                ourShader.setMat4("model", model);
+                models.at(i).Draw(ourShader);
+            }
+            else {
+                ourShader.setMat4("model", objTransformations.at(i));
+                models.at(i).Draw(ourShader);
+            }
+        }
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -150,6 +174,32 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        if (selectedObj < models.size()) {
+            selectedObj += 1;
+        }
+        else {
+            selectedObj = 0;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        models.at(selectedObj).offsetY += 0.01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        models.at(selectedObj).offsetY -= 0.01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        models.at(selectedObj).offsetX += 0.01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        models.at(selectedObj).offsetX -= 0.01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        models.at(selectedObj).offsetZ -= 0.01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        models.at(selectedObj).offsetZ += 0.01f;
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
