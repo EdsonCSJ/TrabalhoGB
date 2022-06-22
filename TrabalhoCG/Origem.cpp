@@ -90,23 +90,26 @@ int main()
     // build and compile shaders
     // -------------------------
     Shader lightingShader("shader.vs", "shader.fs");
-
+    Shader lampShader("lampShader.vs", "lampShader.fs");
     // load models
     // -----------
     Model ourModel1("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/backpack/backpack.obj");
     Model ourModel2("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/pikachu/Pikachu.obj");
     Model ourModel3("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/pikachu/Pikachu.obj");
+    Model ourModel4("C:/Users/edson/Desktop/Projetos/TrabalhoCG/assets/others/spheretri.obj");
     models.push_back(ourModel1);
     models.push_back(ourModel2);
     models.push_back(ourModel3);
+    models.push_back(ourModel4);
 
     //matrizes auxiliares de transformacao
     vector<glm::mat4> objTransformations;
-    glm::mat4 aux = glm::mat4(1.0f);
-    for (int i = 0; i < models.size(); i++) {
+    for (int i = 0; i < models.size() - 1; i++) {
+        glm::mat4 aux = glm::mat4(1.0f);
+        aux = glm::translate(aux, glm::vec3(i * 2, 0.0f, 0.0f));
+        aux = glm::scale(aux, glm::vec3(0.5f, 0.5f, 0.5f));
         objTransformations.push_back(aux);
     }
-
    
     lightingShader.use();
     lightingShader.setInt("material.diffuse", 0);
@@ -130,14 +133,13 @@ int main()
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // don't forget to enable shader before setting uniforms
-        // be sure to activate shader when setting uniforms/drawing objects
+        // setting light source position and camera positions
         lightingShader.use();
         lightingShader.setVec3("light.position", lightPos);
         lightingShader.setVec3("viewPos", camera.Position);
 
         // light properties
-        lightingShader.setVec3("light.ambient", 0.4f, 0.4f, 0.4f);
+        lightingShader.setVec3("light.ambient", 0.6f, 0.6f, 0.6f);
         lightingShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
         lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
         lightingShader.setFloat("light.constant", 1.0f);
@@ -155,10 +157,10 @@ int main()
         lightingShader.setMat4("view", view);
 
         // render the loaded model
-        for (int i = 0; i < models.size(); i++) {
+        for (int i = 0; i < models.size() - 1; i++) {
             if (selectedObj == i) {
                 glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(models.at(i).offsetX, models.at(i).offsetY, models.at(i).offsetZ));
+                model = glm::translate(model, glm::vec3(i * 2 + models.at(i).offsetX, models.at(i).offsetY, models.at(i).offsetZ));
                 model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
                 objTransformations.at(i) = model;
                 lightingShader.setMat4("model", model);
@@ -170,6 +172,14 @@ int main()
             }
         }
 
+        lampShader.use();
+        lampShader.setMat4("projection", projection);
+        lampShader.setMat4("view", view);
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        lampShader.setMat4("model", model);
+        models.at(models.size() - 1).Draw(lampShader);
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)

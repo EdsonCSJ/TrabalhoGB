@@ -49,5 +49,11 @@
     <None Include="shader.fs">
       <Filter>Arquivos de Origem</Filter>
     </None>
+    <None Include="lampShader.fs">
+      <Filter>Arquivos de Origem</Filter>
+    </None>
+    <None Include="lampShader.vs">
+      <Filter>Arquivos de Origem</Filter>
+    </None>
   </ItemGroup>
 </Project>
