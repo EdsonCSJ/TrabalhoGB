@@ -31,10 +31,14 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+// lighting
+glm::vec3 lightPos(1.2f, 4.0f, 2.0f);
+
 using namespace std;
 
 vector<Model> models;
 int selectedObj = 0;
+bool isPressed = false;
 
 
 
@@ -85,7 +89,7 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("shader.vs", "shader.fs");
+    Shader lightingShader("shader.vs", "shader.fs");
 
     // load models
     // -----------
@@ -95,16 +99,20 @@ int main()
     models.push_back(ourModel1);
     models.push_back(ourModel2);
     models.push_back(ourModel3);
-    // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    // render loop
-    // -----------
+    //matrizes auxiliares de transformacao
     vector<glm::mat4> objTransformations;
     glm::mat4 aux = glm::mat4(1.0f);
     for (int i = 0; i < models.size(); i++) {
         objTransformations.push_back(aux);
     }
+
+   
+    lightingShader.use();
+    lightingShader.setInt("material.diffuse", 0);
+    lightingShader.setInt("material.specular", 1);
+    // render loop
+    // -----------
     while (!glfwWindowShouldClose(window))
     {
         // per-frame time logic
@@ -123,13 +131,28 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
-        ourShader.use();
+        // be sure to activate shader when setting uniforms/drawing objects
+        lightingShader.use();
+        lightingShader.setVec3("light.position", lightPos);
+        lightingShader.setVec3("viewPos", camera.Position);
+
+        // light properties
+        lightingShader.setVec3("light.ambient", 0.4f, 0.4f, 0.4f);
+        lightingShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        lightingShader.setFloat("light.constant", 1.0f);
+        lightingShader.setFloat("light.linear", 0.09f);
+        lightingShader.setFloat("light.quadratic", 0.032f);
+
+        // material properties
+        lightingShader.setFloat("material.shininess", 32.0f);
+        
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setMat4("view", view);
 
         // render the loaded model
         for (int i = 0; i < models.size(); i++) {
@@ -138,14 +161,16 @@ int main()
                 model = glm::translate(model, glm::vec3(models.at(i).offsetX, models.at(i).offsetY, models.at(i).offsetZ));
                 model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
                 objTransformations.at(i) = model;
-                ourShader.setMat4("model", model);
-                models.at(i).Draw(ourShader);
+                lightingShader.setMat4("model", model);
+                models.at(i).Draw(lightingShader);
             }
             else {
-                ourShader.setMat4("model", objTransformations.at(i));
-                models.at(i).Draw(ourShader);
+                lightingShader.setMat4("model", objTransformations.at(i));
+                models.at(i).Draw(lightingShader);
             }
         }
+
+
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -165,7 +190,6 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -174,14 +198,6 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        if (selectedObj < models.size()) {
-            selectedObj += 1;
-        }
-        else {
-            selectedObj = 0;
-        }
-    }
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         models.at(selectedObj).offsetY += 0.01f;
     }
@@ -199,6 +215,17 @@ void processInput(GLFWwindow* window)
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         models.at(selectedObj).offsetZ += 0.01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        isPressed = true;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE && isPressed == true) {
+        if (selectedObj < models.size() - 1) {
+            selectedObj += 1;
+        }
+        else {
+            selectedObj = 0;
+        }
+        isPressed = false;
     }
 }
 
