@@ -1,4 +1,5 @@
 # TrabalhoGB
+Integrantes: Alisson Santos e Edson Conte
 
 Comandos:
 
